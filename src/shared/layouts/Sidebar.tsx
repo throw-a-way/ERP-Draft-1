@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Users, UserCircle, GraduationCap } from 'lucide-react';
-import { useAuth } from '../features/auth/AuthContext';
-import { ROUTES } from '../shared/constants/routes';
+import { useAuth } from '../../features/auth/AuthContext';
+import { ROUTES } from '../constants/routes';
 
 export const Sidebar = () => {
   const location = useLocation();

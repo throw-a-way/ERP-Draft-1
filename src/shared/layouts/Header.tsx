@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { UserCircle, LogOut } from 'lucide-react';
-import { useAuth } from '../features/auth/AuthContext';
-import { ROUTES } from '../shared/constants/routes';
+import { useAuth } from '../../features/auth/AuthContext';
+import { ROUTES } from '../constants/routes';
 import { useState } from 'react';
 
 export const Header = () => {
