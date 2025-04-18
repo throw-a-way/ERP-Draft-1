@@ -15,7 +15,7 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTES.LOGIN} />;
+    return <Navigate to={ROUTES.FACULTY_LOGIN} />;
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {

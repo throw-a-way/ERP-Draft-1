@@ -1,6 +1,5 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Users, LogOut } from 'lucide-react';
+import { Home, Users, UserCircle } from 'lucide-react';
 import { useAuth } from '../features/auth/AuthContext';
 import { ROUTES } from '../shared/constants/routes';
 
@@ -17,7 +16,7 @@ export const Sidebar = () => {
     return location.pathname.startsWith(path) ? 'bg-blue-100' : '';
   };
 
-  const canAccessMyStudents = user?.role === 'dean' || user?.role === 'coordinator' || user?.role === 'hod';
+  // Only dean and coordinator can access coordinator section
   const canAccessCoordinator = user?.role === 'dean' || user?.role === 'coordinator';
 
   return (
@@ -33,12 +32,11 @@ export const Sidebar = () => {
           <Home className="w-5 h-5" />
           <span>Home</span>
         </Link>
-        {canAccessMyStudents && (
-          <Link to={ROUTES.MY_STUDENTS} className={`flex items-center space-x-2 p-3 rounded-lg mb-2 ${isActive(ROUTES.MY_STUDENTS)}`}>
-            <Users className="w-5 h-5" />
-            <span>My Students</span>
-          </Link>
-        )}
+        <Link to={ROUTES.MY_PROFILE} className={`flex items-center space-x-2 p-3 rounded-lg mb-2 ${isActive(ROUTES.MY_PROFILE)}`}>
+          <UserCircle className="w-5 h-5" />
+          <span>My Profile</span>
+        </Link>
+
         {canAccessCoordinator && (
           <Link to={ROUTES.COORDINATOR} className={`flex items-center space-x-2 p-3 rounded-lg ${isActive(ROUTES.COORDINATOR)}`}>
             <Users className="w-5 h-5" />

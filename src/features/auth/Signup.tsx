@@ -96,7 +96,7 @@ export const SignupPage = () => {
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{' '}
           <a
-            href={ROUTES.LOGIN}
+            href={ROUTES.FACULTY_LOGIN}
             className="text-purple-600 hover:text-purple-700"
           >
             Login
