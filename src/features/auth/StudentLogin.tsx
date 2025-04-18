@@ -1,23 +1,33 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Loader } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { ROUTES } from '../../shared/constants/routes';
+import { Role } from '../../shared/types';
 
 export const StudentLogin = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username || !password) {
+      setFormError('Please enter both student ID and password');
+      return;
+    }
+    
     try {
-      // For now, students will be treated as a special type of 'hod' role
-      await login(username, password, 'hod');
+      // Create credentials object as expected by the login function
+      const credentials = { username, password, role: 'student' as Role };
+      await login(credentials);
+      // Navigate to dashboard after successful login
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
-      setError('Invalid credentials');
+      setFormError('Login failed. Please try again.');
     }
   };
 
@@ -29,9 +39,9 @@ export const StudentLogin = () => {
             Student Login
           </h2>
         </div>
-        {error && (
+        {formError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
+            {formError}
           </div>
         )}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -65,9 +75,17 @@ export const StudentLogin = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+            disabled={loading}
+            className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            Sign In
+            {loading ? (
+              <>
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
       </div>

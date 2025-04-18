@@ -1,24 +1,34 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
-import { useAuth, type Role } from './AuthContext';
+import { GraduationCap, Loader } from 'lucide-react';
+import { useAuth } from './AuthContext';
 import { ROUTES } from '../../shared/constants/routes';
+import { Role } from '../../shared/types';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('dean');
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username || !password) {
+      setFormError('Please enter both username and password');
+      return;
+    }
+    
     try {
-      await login(username, password, role);
+      // Create credentials object as expected by the login function
+      const credentials = { username, password, role };
+      await login(credentials);
+      // Navigate to dashboard after successful login
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
-      setError('Invalid credentials');
+      setFormError('Login failed. Please try again.');
     }
   };
 
@@ -29,7 +39,7 @@ export const LoginPage = () => {
           <GraduationCap className="w-12 h-12 text-purple-600" />
         </div>
         <h1 className="text-2xl font-bold text-center mb-6">Login to Dashboard</h1>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        {formError && <p className="text-red-500 text-center mb-4">{formError}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -71,9 +81,17 @@ export const LoginPage = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            disabled={loading}
+            className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            Login
+            {loading ? (
+              <>
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              'Login'
+            )}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">

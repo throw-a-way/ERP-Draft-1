@@ -1,59 +1,127 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useCallback, ReactNode, useEffect } from 'react';
+import { AuthContextType, AuthState, LoginCredentials, SignupData, User } from '../../shared/types';
+import { authService } from '../../services/api';
 
-export type Role = 'dean' | 'coordinator' | 'hod';
+// Initial state
+const initialState: AuthState = {
+  isAuthenticated: false,
+  user: null,
+  loading: false,
+  error: null,
+};
 
-interface User {
-  username: string;
-  role: Role;
-  profileImageUrl?: string; // Optional URL for user's profile image
-}
+// Action types
+type AuthAction =
+  | { type: 'AUTH_START' }
+  | { type: 'AUTH_SUCCESS'; payload: User }
+  | { type: 'AUTH_FAILURE'; payload: string }
+  | { type: 'AUTH_LOGOUT' }
+  | { type: 'CLEAR_ERROR' };
 
-interface AuthContextType {
-  isAuthenticated: boolean;
-  user: User | null;
-  login: (username: string, password: string, role: Role) => Promise<void>;
-  signup: (username: string, password: string, role: Role) => Promise<void>;
-  logout: () => void;
+// Reducer
+function authReducer(state: AuthState, action: AuthAction): AuthState {
+  switch (action.type) {
+    case 'AUTH_START':
+      return { ...state, loading: true, error: null };
+    case 'AUTH_SUCCESS':
+      return {
+        ...state,
+        isAuthenticated: true,
+        user: action.payload,
+        loading: false,
+        error: null,
+      };
+    case 'AUTH_FAILURE':
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        loading: false,
+        error: action.payload,
+      };
+    case 'AUTH_LOGOUT':
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        loading: false,
+      };
+    case 'CLEAR_ERROR':
+      return { ...state, error: null };
+    default:
+      return state;
+  }
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const login = async (username: string, password: string /* kept for future backend integration */, role: Role) => {
-    // In a real app, you would validate credentials against a backend and get the profile image URL
-    setUser({
-      username,
-      role,
-      // This is a placeholder. In a real app, this would come from your backend
-      profileImageUrl: `https://api.dicebear.com/7.x/avatars/svg?seed=${username}`,
-    });
-    setIsAuthenticated(true);
+  // Check for stored auth token on mount
+  useEffect(() => {
+    const validateAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        dispatch({ type: 'AUTH_START' });
+        try {
+          const user = await authService.validateToken();
+          dispatch({ type: 'AUTH_SUCCESS', payload: user });
+        } catch (error) {
+          dispatch({ type: 'AUTH_FAILURE', payload: 'Session expired' });
+          localStorage.removeItem('auth_token');
+        }
+      }
+    };
+    validateAuth();
+  }, []);
+
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    dispatch({ type: 'AUTH_START' });
+    try {
+      const user = await authService.login(credentials);
+      // Note: auth service already stores the user in localStorage
+      dispatch({ type: 'AUTH_SUCCESS', payload: user });
+    } catch (error) {
+      dispatch({ type: 'AUTH_FAILURE', payload: 'Invalid credentials' });
+    }
+  }, []);
+
+  const signup = useCallback(async (data: SignupData) => {
+    dispatch({ type: 'AUTH_START' });
+    try {
+      const user = await authService.signup(data);
+      // Note: auth service already stores the user in localStorage
+      dispatch({ type: 'AUTH_SUCCESS', payload: user });
+    } catch (error) {
+      dispatch({ type: 'AUTH_FAILURE', payload: 'Signup failed' });
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    dispatch({ type: 'AUTH_START' });
+    try {
+      await authService.logout();
+      localStorage.removeItem('user');
+      dispatch({ type: 'AUTH_LOGOUT' });
+    } catch (error) {
+      dispatch({ type: 'AUTH_FAILURE', payload: 'Logout failed' });
+    }
+  }, []);
+
+  const clearError = useCallback(() => {
+    dispatch({ type: 'CLEAR_ERROR' });
+  }, []);
+
+  const value: AuthContextType = {
+    ...state,
+    login,
+    signup,
+    logout,
+    clearError,
   };
 
-  const signup = async (username: string, password: string /* kept for future backend integration */, role: Role) => {
-    // In a real app, you would create a new user in the backend
-    setUser({
-      username,
-      role,
-      // This is a placeholder. In a real app, this would come from your backend
-      profileImageUrl: `https://api.dicebear.com/7.x/avatars/svg?seed=${username}`,
-    });
-    setIsAuthenticated(true);
-  };
-
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-  };
-
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, signup, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
